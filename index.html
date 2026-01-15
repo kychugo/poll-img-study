@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pollination Image Study Hub</title>
+    <style>
+        :root {
+            --bg-dark: #121212;
+            --bg-medium: #1e1e1e;
+            --bg-light: #2a2a2a;
+            --accent-primary: #3a7fff;
+            --accent-secondary: #00aaff;
+            --text-primary: #f0f0f0;
+            --text-secondary: #a0a0a0;
+            --border-color: #333333;
+            --border-radius: 12px;
+            --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            --shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            --transition-speed: 0.3s;
+        }
+
+        body {
+            margin: 0;
+            font-family: var(--font-family);
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            flex-grow: 1;
+            overflow: hidden;
+        }
+
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 2rem;
+            gap: 1.5rem;
+            overflow-y: auto;
+        }
+
+        header {
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1.5rem;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        header p {
+            margin-top: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        .controls-area {
+            background-color: var(--bg-medium);
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .prompt-mode-selector {
+            display: flex;
+            gap: 1rem;
+            background-color: var(--bg-light);
+            border-radius: var(--border-radius);
+            padding: 0.5rem;
+        }
+
+        .prompt-mode-selector button {
+            flex: 1;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 8px;
+            background-color: transparent;
+            color: var(--text-secondary);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-speed);
+        }
+        
+        .prompt-mode-selector button.active {
+            background-color: var(--accent-primary);
+            color: white;
+            box-shadow: 0 4px 10px rgba(58, 127, 255, 0.3);
+        }
+
+        .input-group textarea {
+            width: 100%;
+            min-height: 80px;
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            background-color: var(--bg-light);
+            color: var(--text-primary);
+            font-size: 1rem;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+
+        #customPromptContainer { display: none; }
+
+        .settings-details {
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 0 1rem 1rem;
+            background-color: var(--bg-light);
+        }
+        .settings-details summary {
+            cursor: pointer;
+            padding: 1rem 0;
+            font-weight: 600;
+            color: var(--text-secondary);
+            list-style: none; /* Hide default marker */
+        }
+        .settings-details summary::-webkit-details-marker { display: none; } /* Chrome */
+        .settings-details summary::before {
+            content: '►';
+            margin-right: 0.5rem;
+            display: inline-block;
+            transition: transform 0.2s;
+        }
+        .settings-details[open] summary::before {
+            transform: rotate(90deg);
+        }
+
+
+        .action-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .toolbar { display: flex; gap: 0.5rem; }
+
+        .icon-btn {
+            background-color: var(--bg-light);
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            padding: 0.75rem;
+            border-radius: 50%;
+            transition: all var(--transition-speed);
+        }
+        .icon-btn:hover { background-color: var(--accent-secondary); border-color: var(--accent-secondary); }
+        .icon-btn svg { width: 24px; height: 24px; fill: var(--text-primary); display: block; }
+
+        #generateBtn {
+            padding: 0.8rem 2rem;
+            border: none;
+            border-radius: var(--border-radius);
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all var(--transition-speed);
+        }
+        #generateBtn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(58, 127, 255, 0.4); }
+        #generateBtn:disabled { background: var(--bg-light); cursor: not-allowed; color: var(--text-secondary); }
+
+        #image-display { display: flex; justify-content: center; align-items: center; flex-grow: 1; min-height: 300px; }
+        #result-container { text-align: center; }
+        #result-container img { max-width: 100%; max-height: 65vh; object-fit: contain; border-radius: var(--border-radius); box-shadow: var(--shadow); border: 2px solid var(--border-color); }
+        #downloadBtn { margin-top: 1.5rem; padding: 0.75rem 1.5rem; border: none; border-radius: var(--border-radius); background-color: var(--accent-primary); color: white; font-size: 1rem; font-weight: bold; cursor: pointer; transition: all var(--transition-speed); display: none; }
+        #downloadBtn:hover { background-color: var(--accent-secondary); transform: scale(1.05); }
+
+        #loader { border: 6px solid var(--bg-light); border-top: 6px solid var(--accent-primary); border-radius: 50%; width: 60px; height: 60px; animation: spin 1s linear infinite; display: none; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); backdrop-filter: blur(5px); animation: fadeIn 0.3s; }
+        .modal-content { background-color: var(--bg-medium); margin: 10vh auto; padding: 2rem; width: 90%; max-width: 500px; border-radius: var(--border-radius); position: relative; border: 1px solid var(--border-color); display: flex; flex-direction: column; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; }
+        .modal-header h2 { margin: 0; font-size: 1.5rem; }
+        .close-btn { color: var(--text-secondary); font-size: 28px; font-weight: bold; cursor: pointer; transition: color var(--transition-speed); }
+        .close-btn:hover { color: var(--accent-primary); }
+        
+        .settings-grid { display: grid; grid-template-columns: 1fr; gap: 1.5rem; margin-top: 1rem; }
+        .setting-item label { display: block; margin-bottom: 0.5rem; color: var(--text-secondary); }
+        .setting-item select, .setting-item input[type="number"], .setting-item input[type="text"], .setting-item input[type="password"] { width: 100%; box-sizing: border-box; padding: 0.75rem; background-color: var(--bg-dark); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; }
+        
+        #apiKeyModal .modal-body p { color: var(--text-secondary); margin-top: 0; line-height: 1.5; }
+        #apiKeyModal .modal-footer { margin-top: 1.5rem; text-align: right; }
+        #saveApiKeyBtn { padding: 0.75rem 1.5rem; border-radius: var(--border-radius); background-color: var(--accent-primary); color: white; border: none; font-weight: bold; cursor: pointer; }
+        #saveApiKeyBtn:hover { background-color: var(--accent-secondary); }
+
+        #history-panel { position: fixed; top: 0; right: -100%; width: 380px; height: 100%; background-color: var(--bg-medium); box-shadow: -5px 0 15px rgba(0,0,0,0.5); transition: right 0.4s ease-in-out; z-index: 99; display: flex; flex-direction: column; border-left: 1px solid var(--border-color); }
+        #history-panel.open { right: 0; }
+        .history-header { padding: 1rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); }
+        .history-header h3 { margin: 0; font-size: 1.2rem; }
+        #history-grid { padding: 1rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; overflow-y: auto; flex-grow: 1; }
+        .history-item img { width: 100%; border-radius: var(--border-radius); cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; border: 1px solid var(--border-color); }
+        .history-item img:hover { transform: scale(1.05); box-shadow: 0 0 15px var(--accent-primary); }
+        
+        .large-modal { max-width: 80vw; }
+        .history-viewer-content { display: flex; gap: 1.5rem; margin-top: 1rem; overflow-y: auto; }
+        #historyViewerImage { max-width: 50%; object-fit: contain; border-radius: var(--border-radius); align-self: flex-start; }
+        .history-prompt-details { flex-grow: 1; }
+        .history-prompt-details h3 { margin-top: 0; }
+        .history-prompt-details pre { background-color: var(--bg-dark); padding: 1rem; border-radius: 8px; white-space: pre-wrap; word-wrap: break-word; font-family: monospace; color: var(--text-secondary); max-height: 400px; overflow-y: auto; }
+        .modal-download-btn { display: inline-block; margin-top: 1.5rem; padding: 0.75rem 1.5rem; border-radius: var(--border-radius); background-color: var(--accent-primary); color: white; text-decoration: none; font-weight: bold; text-align: center; transition: all var(--transition-speed); }
+        .modal-download-btn:hover { background-color: var(--accent-secondary); }
+
+        footer { text-align: center; padding: 1.5rem; color: var(--text-secondary); font-size: 0.9rem; border-top: 1px solid var(--border-color); margin-top: auto; position: relative;}
+        .language-switcher { position: absolute; right: 1.5rem; top: 50%; transform: translateY(-50%); }
+        .language-switcher select { background-color: var(--bg-light); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.25rem 0.5rem; }
+
+        @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
+        
+        @media (min-width: 769px) {
+            .settings-grid { grid-template-columns: 1fr 1fr 1fr; }
+        }
+        @media (max-width: 900px) {
+            .history-viewer-content { flex-direction: column; }
+            #historyViewerImage { max-width: 100%; }
+        }
+        @media (max-width: 768px) {
+            .main-content { padding: 1rem; }
+            .action-bar { flex-direction: column-reverse; gap: 1.5rem; align-items: stretch; }
+            #generateBtn { width: 100%; }
+            #history-panel { width: 100%; }
+            .language-switcher { position: static; transform: none; margin-top: 1rem; }
+            footer { display: flex; flex-direction: column; align-items: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <main class="main-content">
+            <header>
+                <h1 data-i18n="mainTitle">Pollination Image Study Hub</h1>
+                <p data-i18n="mainSubtitle">Your creative study partner</p>
+            </header>
+
+            <div class="controls-area">
+                <div class="prompt-mode-selector">
+                    <button id="modeStudy" class="active" data-i18n="studyMode">📚 Study Comics Mode</button>
+                    <button id="modeCustom" data-i18n="customMode">🎨 Custom Mode</button>
+                </div>
+
+                <div class="input-group">
+                    <textarea id="userInput" data-i18n-placeholder="studyPlaceholder"></textarea>
+                    <div id="customPromptContainer">
+                         <textarea id="customPromptInput" data-i18n-placeholder="customPlaceholder"></textarea>
+                    </div>
+                </div>
+                
+                <details class="settings-details">
+                    <summary data-i18n="advancedSettings">Advanced Settings</summary>
+                    <div class="settings-grid">
+                        <div class="setting-item">
+                            <label for="aspectRatio" data-i18n="aspectRatioLabel">Aspect Ratio</label>
+                            <select id="aspectRatio">
+                                <option value="1024/1024">1:1 (Square)</option>
+                                <option value="1344/768">16:9 (Landscape)</option>
+                                <option value="768/1344">9:16 (Portrait)</option>
+                                <option value="1280/854">3:2 (Landscape)</option>
+                                <option value="854/1280">2:3 (Portrait)</option>
+                            </select>
+                        </div>
+                         <div class="setting-item">
+                            <label for="seed" data-i18n="seedLabel">Seed (0 for random)</label>
+                            <input type="number" id="seed" value="0">
+                        </div>
+                         <div class="setting-item">
+                            <label for="languageSelect" data-i18n="promptLangLabel">Prompt Language (Study Mode)</label>
+                            <select id="languageSelect">
+                                <option value="mix" data-i18n="langOptionMix">English & Traditional Chinese</option>
+                                <option value="en" data-i18n="langOptionEn">English Only</option>
+                                <option value="zh-Hant" data-i18n="langOptionZh">僅繁體中文</option>
+                            </select>
+                        </div>
+                    </div>
+                </details>
+
+                <div class="action-bar">
+                    <div class="toolbar">
+                        <button class="icon-btn" id="apiKeyBtn" data-i18n-title="apiKeyTitle">
+                            <svg viewBox="0 0 24 24"><path d="M12.6,2.19L5,9.8V12h2.2l-3.6,3.6c-1.2,1.2-1.2,3.1,0,4.2c1.2,1.2,3.1,1.2,4.2,0l3.6-3.6V14h2.2l7.6-7.6c1.2-1.2,1.2-3.1,0-4.2C20.9,0.99,19,0.99,17.8,2.19z M7.1,18.9c-0.6,0.6-1.5,0.6-2.1,0c-0.6-0.6-0.6-1.5,0-2.1l3-3l2.1,2.1L7.1,18.9z M18.9,8.4L15.6,11l-2.1-2.1l3.3-3.3c0.6-0.6,1.5-0.6,2.1,0C19.5,6.2,19.5,7.2,18.9,7.8z"/></svg>
+                        </button>
+                        <button class="icon-btn" id="historyBtn" data-i18n-title="historyTitle">
+                            <svg viewBox="0 0 24 24"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6a7 7 0 0 1 7-7 7 7 0 0 1 7 7 7 7 0 0 1-7 7v2a9 9 0 0 0 9-9 9 9 0 0 0-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+                        </button>
+                    </div>
+                     <button id="generateBtn" data-i18n="generate">Generate</button>
+                </div>
+            </div>
+            
+            <div id="image-display">
+                <div id="loader"></div>
+                <div id="result-container">
+                    <img id="resultImage" src="" alt="Generated Image">
+                    <button id="downloadBtn" data-i18n="download">Download Image</button>
+                </div>
+            </div>
+        </main>
+        
+        <aside id="history-panel">
+            <div class="history-header">
+                 <h3 data-i18n="historyPanelTitle">Generation History</h3>
+                 <button class="icon-btn" id="closeHistoryBtn" data-i18n-title="closeHistoryTitle">
+                     <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                 </button>
+            </div>
+            <div id="history-grid"></div>
+        </aside>
+    </div>
+
+    <!-- Modals -->
+    <div id="apiKeyModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 data-i18n="apiKeyModalTitle">API Key Required</h2>
+                <span class="close-btn" id="closeApiKeyBtn">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p data-i18n="apiKeyModalDesc">Please enter your Pollinations AI API key to start generating images. This will be saved securely in your browser's local storage.</p>
+                <div class="setting-item">
+                    <label for="apiKeyInput" data-i18n="apiKeyInputLabel">Your API Key</label>
+                    <input type="password" id="apiKeyInput">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="saveApiKeyBtn" data-i18n="save">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="historyViewerModal" class="modal">
+        <div class="modal-content large-modal">
+            <div class="modal-header">
+                <h2 data-i18n="historyViewerTitle">History Item Details</h2>
+                <span class="close-btn" id="closeHistoryViewerBtn">&times;</span>
+            </div>
+            <div class="history-viewer-content">
+                <img id="historyViewerImage" src="" alt="History Image"/>
+                <div class="history-prompt-details">
+                    <h3 data-i18n="promptUsed">Prompt Used:</h3>
+                    <pre id="historyViewerPrompt"></pre>
+                </div>
+            </div>
+            <a id="historyViewerDownloadBtn" class="modal-download-btn" href="#" download data-i18n="download">Download Image</a>
+        </div>
+    </div>
+
+    <footer>
+        <p data-i18n="copyright">Copyright © 2025 Hugo Wong. All rights reserved.</p>
+         <div class="language-switcher">
+            <select id="languageSwitcher">
+                <option value="en">English</option>
+                <option value="zh-Hant">繁體中文</option>
+            </select>
+        </div>
+    </footer>
+
+    <script>
+        const MODEL_NAME = "nanobanana-pro";
+        let apiKey = '';
+
+        const dom = {
+            generateBtn: document.getElementById('generateBtn'),
+            userInput: document.getElementById('userInput'),
+            loader: document.getElementById('loader'),
+            resultContainer: document.getElementById('result-container'),
+            resultImage: document.getElementById('resultImage'),
+            downloadBtn: document.getElementById('downloadBtn'),
+            apiKeyBtn: document.getElementById('apiKeyBtn'),
+            apiKeyModal: document.getElementById('apiKeyModal'),
+            closeApiKeyBtn: document.getElementById('closeApiKeyBtn'),
+            saveApiKeyBtn: document.getElementById('saveApiKeyBtn'),
+            apiKeyInput: document.getElementById('apiKeyInput'),
+            aspectRatioSelect: document.getElementById('aspectRatio'),
+            seedInput: document.getElementById('seed'),
+            languageSelect: document.getElementById('languageSelect'),
+            historyBtn: document.getElementById('historyBtn'),
+            historyPanel: document.getElementById('history-panel'),
+            closeHistoryBtn: document.getElementById('closeHistoryBtn'),
+            historyGrid: document.getElementById('history-grid'),
+            modeStudyBtn: document.getElementById('modeStudy'),
+            modeCustomBtn: document.getElementById('modeCustom'),
+            customPromptContainer: document.getElementById('customPromptContainer'),
+            customPromptInput: document.getElementById('customPromptInput'),
+            historyViewerModal: document.getElementById('historyViewerModal'),
+            closeHistoryViewerBtn: document.getElementById('closeHistoryViewerBtn'),
+            historyViewerImage: document.getElementById('historyViewerImage'),
+            historyViewerPrompt: document.getElementById('historyViewerPrompt'),
+            historyViewerDownloadBtn: document.getElementById('historyViewerDownloadBtn'),
+            languageSwitcher: document.getElementById('languageSwitcher'),
+        };
+
+        let currentMode = 'study';
+        let history = JSON.parse(localStorage.getItem('generationHistoryV3')) || [];
+
+        const translations = {
+            'en': {
+                mainTitle: "Pollination Image Study Hub",
+                mainSubtitle: "Your creative study partner",
+                studyMode: "📚 Study Comics Mode",
+                customMode: "🎨 Custom Mode",
+                studyPlaceholder: "Enter a topic here, like 'The Solar System' or 'Photosynthesis'",
+                customPlaceholder: "Enter your full, custom prompt here. The topic above will be ignored.",
+                advancedSettings: "Advanced Settings",
+                aspectRatioLabel: "Aspect Ratio",
+                seedLabel: "Seed (0 for random)",
+                promptLangLabel: "Prompt Language (Study Mode)",
+                langOptionMix: "English & Traditional Chinese",
+                langOptionEn: "English Only",
+                langOptionZh: "僅繁體中文",
+                apiKeyTitle: "Edit API Key",
+                historyTitle: "History",
+                generate: "Generate",
+                generating: "Generating...",
+                download: "Download Image",
+                historyPanelTitle: "Generation History",
+                closeHistoryTitle: "Close History",
+                apiKeyModalTitle: "API Key Required",
+                apiKeyModalDesc: "Please enter your Pollinations AI API key to start generating images. This will be saved securely in your browser's local storage.",
+                apiKeyInputLabel: "Your API Key",
+                save: "Save",
+                historyViewerTitle: "History Item Details",
+                promptUsed: "Prompt Used:",
+                copyright: "Copyright © 2025 Hugo Wong. All rights reserved.",
+                alertTopic: "Please enter a topic for Study Comics Mode.",
+                alertCustom: "Please enter your custom prompt.",
+                alertFailed: "Failed to generate image. Check your API key or see console for details.",
+                alertNoApiKey: "API Key is not set. Please set it via the key icon."
+            },
+            'zh-Hant': {
+                mainTitle: "Pollination 圖像學習中心",
+                mainSubtitle: "您的創意學習夥伴",
+                studyMode: "📚 學習漫畫模式",
+                customMode: "🎨 自訂模式",
+                studyPlaceholder: "在這裡輸入一個主題，例如「太陽系」或「光合作用」",
+                customPlaceholder: "在此輸入您的完整自訂提示，以上主題將被忽略。",
+                advancedSettings: "進階設定",
+                aspectRatioLabel: "圖片比例",
+                seedLabel: "種子碼 (0 為隨機)",
+                promptLangLabel: "提示語言 (學習模式)",
+                langOptionMix: "英文 & 繁體中文",
+                langOptionEn: "僅英文",
+                langOptionZh: "僅繁體中文",
+                apiKeyTitle: "編輯 API 金鑰",
+                historyTitle: "歷史紀錄",
+                generate: "生成",
+                generating: "生成中...",
+                download: "下載圖片",
+                historyPanelTitle: "生成歷史",
+                closeHistoryTitle: "關閉歷史紀錄",
+                apiKeyModalTitle: "需要 API 金鑰",
+                apiKeyModalDesc: "請輸入您的 Pollinations AI API 金鑰以開始生成圖片。金鑰將安全地儲存在您的瀏覽器本機儲存空間中。",
+                apiKeyInputLabel: "您的 API 金鑰",
+                save: "儲存",
+                historyViewerTitle: "歷史項目詳情",
+                promptUsed: "使用的提示:",
+                copyright: "版權所有 © 2025 Hugo Wong. 保留所有權利。",
+                alertTopic: "請為「學習漫畫模式」輸入一個主題。",
+                alertCustom: "請輸入您的自訂提示。",
+                alertFailed: "圖片生成失敗。請檢查您的 API 金鑰或查看控制台以獲取詳細資訊。",
+                alertNoApiKey: "尚未設定 API 金鑰。請點擊鑰匙圖示進行設定。"
+            }
+        };
+
+        const setLanguage = (lang) => {
+            const langPack = translations[lang];
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                el.textContent = langPack[key];
+            });
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                el.placeholder = langPack[key];
+            });
+             document.querySelectorAll('[data-i18n-title]').forEach(el => {
+                const key = el.getAttribute('data-i18n-title');
+                el.title = langPack[key];
+            });
+            localStorage.setItem('platformLanguage', lang);
+            dom.languageSwitcher.value = lang;
+            document.documentElement.lang = lang.startsWith('zh') ? 'zh-Hant' : 'en';
+        };
+
+        const studyModePromptTemplate = (topic, language) => {
+            let languageRule = '';
+            switch (language) {
+                case 'en':
+                    languageRule = 'Language Rule: The entire response, including all text in the comic panels and descriptions, must be exclusively in English.';
+                    break;
+                case 'zh-Hant':
+                    languageRule = 'Language Rule: The entire response, including all text in the comic panels and descriptions, must be exclusively in Traditional Chinese (繁體中文).';
+                    break;
+                default:
+                    languageRule = 'Language Rule: Follow special preference (One sentence English, one sentence Traditional Chinese - 繁體中文).';
+                    break;
+            }
+            return `You are a fun, visual-oriented tutor who explains complex concepts using a "Manga/Comic Panel" logic. Instructions: Visual Scene Breakdown: For every question, break the explanation into 3-4 "panels" (scenes). Personification: Use characters or relatable metaphors (e.g., "Rod cells are night-shift workers," "RAM is a temporary workbench"). The "Hero" Focus: Identify the key concept as the "protagonist" of the scene. ${languageRule} Final Reveal: Conclude with a clear summary table or a "Case Closed" (真相大白) style conclusion. topics : ${topic}`;
+        };
+        
+        const generateImage = async () => {
+            if (!apiKey) {
+                alert(translations[dom.languageSwitcher.value].alertNoApiKey);
+                dom.apiKeyModal.style.display = 'block';
+                return;
+            }
+
+            let finalPrompt = '';
+            const currentLang = dom.languageSwitcher.value;
+
+            if (currentMode === 'study') {
+                const topic = dom.userInput.value;
+                if (!topic.trim()) { alert(translations[currentLang].alertTopic); return; }
+                const selectedLanguage = dom.languageSelect.value;
+                finalPrompt = studyModePromptTemplate(topic, selectedLanguage);
+            } else {
+                finalPrompt = dom.customPromptInput.value;
+                 if (!finalPrompt.trim()) { alert(translations[currentLang].alertCustom); return; }
+            }
+
+            setLoading(true);
+            const encodedPrompt = encodeURIComponent(finalPrompt);
+            const [width, height] = dom.aspectRatioSelect.value.split('/');
+            const seed = dom.seedInput.value;
+            let apiUrl = `https://gen.pollinations.ai/image/${encodedPrompt}?model=${MODEL_NAME}&width=${width}&height=${height}`;
+            if (seed && parseInt(seed) !== 0) apiUrl += `&seed=${seed}`;
+
+            try {
+                const response = await fetch(apiUrl, { headers: { 'Authorization': `Bearer ${apiKey}` } });
+                if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+                const imageBlob = await response.blob();
+                displayImage(URL.createObjectURL(imageBlob));
+                addToHistory(imageBlob, finalPrompt);
+            } catch (error) {
+                console.error("Error generating image:", error);
+                alert(translations[currentLang].alertFailed);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        const setLoading = (isLoading) => {
+            const currentLang = dom.languageSwitcher.value;
+            dom.loader.style.display = isLoading ? 'block' : 'none';
+            dom.generateBtn.disabled = isLoading;
+            dom.generateBtn.textContent = isLoading ? translations[currentLang].generating : translations[currentLang].generate;
+            dom.resultContainer.style.display = isLoading ? 'none' : 'block';
+        };
+
+        const displayImage = (url) => {
+            dom.resultImage.src = url;
+            dom.resultImage.style.display = 'block';
+            dom.downloadBtn.style.display = 'inline-block';
+            dom.downloadBtn.onclick = () => {
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `pollination_${Date.now()}.png`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            };
+        };
+        
+        const addToHistory = (imageBlob, prompt) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(imageBlob);
+            reader.onloadend = () => {
+                const historyEntry = { imageData: reader.result, prompt: prompt };
+                if (history.length >= 20) history.shift();
+                history.push(historyEntry);
+                localStorage.setItem('generationHistoryV3', JSON.stringify(history));
+                renderHistory();
+            };
+        };
+        
+        const renderHistory = () => {
+            dom.historyGrid.innerHTML = '';
+            [...history].reverse().forEach((entry, index) => {
+                 const reversedIndex = history.length - 1 - index;
+                 const img = document.createElement('img');
+                 img.src = entry.imageData;
+                 img.onclick = () => showHistoryItem(reversedIndex);
+                 const item = document.createElement('div');
+                 item.className = 'history-item';
+                 item.appendChild(img);
+                 dom.historyGrid.appendChild(item);
+            });
+        };
+
+        const showHistoryItem = (index) => {
+            const item = history[index];
+            if (!item) return;
+            dom.historyViewerImage.src = item.imageData;
+            dom.historyViewerPrompt.textContent = item.prompt;
+            dom.historyViewerDownloadBtn.href = item.imageData;
+            dom.historyViewerDownloadBtn.download = `history_item_${Date.now()}.png`;
+            dom.historyViewerModal.style.display = 'block';
+        };
+
+        const setPromptMode = (mode) => {
+            currentMode = mode;
+            dom.modeStudyBtn.classList.toggle('active', mode === 'study');
+            dom.modeCustomBtn.classList.toggle('active', mode === 'custom');
+            dom.userInput.style.display = (mode === 'study') ? 'block' : 'none';
+            dom.customPromptContainer.style.display = (mode === 'custom') ? 'block' : 'none';
+        };
+
+        const loadApiKey = () => {
+            const savedKey = localStorage.getItem('pollinationsApiKey');
+            if (savedKey) {
+                apiKey = savedKey;
+                dom.apiKeyInput.value = apiKey;
+                dom.generateBtn.disabled = false;
+            } else {
+                dom.apiKeyModal.style.display = 'block';
+                dom.generateBtn.disabled = true;
+            }
+        };
+
+        const saveApiKey = () => {
+            const newKey = dom.apiKeyInput.value.trim();
+            if (newKey) {
+                apiKey = newKey;
+                localStorage.setItem('pollinationsApiKey', apiKey);
+                dom.apiKeyModal.style.display = 'none';
+                dom.generateBtn.disabled = false;
+            }
+        };
+
+        // --- EVENT LISTENERS ---
+        dom.generateBtn.addEventListener('click', generateImage);
+        dom.modeStudyBtn.onclick = () => setPromptMode('study');
+        dom.modeCustomBtn.onclick = () => setPromptMode('custom');
+        
+        dom.apiKeyBtn.onclick = () => dom.apiKeyModal.style.display = 'block';
+        dom.closeApiKeyBtn.onclick = () => dom.apiKeyModal.style.display = 'none';
+        dom.saveApiKeyBtn.onclick = saveApiKey;
+
+        dom.historyBtn.onclick = () => dom.historyPanel.classList.add('open');
+        dom.closeHistoryBtn.onclick = () => dom.historyPanel.classList.remove('open');
+        dom.closeHistoryViewerBtn.onclick = () => dom.historyViewerModal.style.display = 'none';
+        
+        dom.languageSwitcher.onchange = (e) => setLanguage(e.target.value);
+
+        window.onclick = (event) => {
+            if (event.target == dom.apiKeyModal) dom.apiKeyModal.style.display = 'none';
+            if (event.target == dom.historyViewerModal) dom.historyViewerModal.style.display = 'none';
+            if (dom.historyPanel.classList.contains('open') && !dom.historyPanel.contains(event.target) && event.target !== dom.historyBtn && !dom.historyBtn.contains(event.target)) {
+                 dom.historyPanel.classList.remove('open');
+            }
+        };
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedLang = localStorage.getItem('platformLanguage') || (navigator.language.startsWith('zh') ? 'zh-Hant' : 'en');
+            setLanguage(savedLang);
+            
+            dom.resultImage.style.display = 'none';
+            setPromptMode('study');
+            renderHistory();
+            loadApiKey();
+        });
+    </script>
+</body>
+</html>
